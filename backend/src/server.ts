@@ -37,7 +37,10 @@ app.use(
 );
 
 
-
+app.use((req, res, next) => {
+  console.log(`>>> ${req.method} ${req.path}`);
+  next();
+});
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.get("/api/health", (req, res) => {
