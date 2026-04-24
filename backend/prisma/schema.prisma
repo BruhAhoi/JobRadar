@@ -38,6 +38,9 @@ model JobApplication {
   updatedAt      DateTime        @updatedAt
   interviewNotes InterviewNote[]
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, appliedAt(sort: Desc)])
+  @@index([userId, status])
 }
 
 model InterviewNote {
@@ -48,6 +51,9 @@ model InterviewNote {
   type      NoteType       @default(IMPRESSION)
   createdAt DateTime       @default(now())
   job       JobApplication @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([userId])
 }
 
 model RefreshToken {
@@ -58,6 +64,8 @@ model RefreshToken {
   revokedAt DateTime?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PasswordResetToken {

@@ -1,33 +1,72 @@
 import express from "express";
 import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./libs/swagger";
 import helmet from "helmet";
 
 import authRoute from "./routes/authRoute";
 import userRoute from "./routes/userRoute";
+import jobRoute from "./routes/jobRoute";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Helmet cho toàn bộ routes còn lại
-app.use(helmet());
-
-//cors cho phép frontend gửi cookie
 app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true, 
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        objectSrc: ["'none'"],
+      },
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   })
 );
 
-app.use(express.json());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
+
+const globalLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: "RATE_LIMITED", message: "Too many requests" } },
+});
+app.use("/api", globalLimiter);
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 5,
+  message: { success: false, error: { code: "RATE_LIMITED", message: "Too many login attempts. Try again in 15 minutes." } },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  max: 3,
+  message: { success: false, error: { code: "RATE_LIMITED", message: "Too many register attempts. Try again later." } },
+});
+
+const forgotLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  max: 3,
+  message: { success: false, error: { code: "RATE_LIMITED", message: "Too many password reset requests." } },
+});
 
 app.use(
   "/api/docs",
@@ -36,13 +75,13 @@ app.use(
   swaggerUi.setup(swaggerSpec)
 );
 
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registerLimiter);
+app.use("/api/auth/forgot-password", forgotLimiter);
 
-app.use((req, res, next) => {
-  console.log(`>>> ${req.method} ${req.path}`);
-  next();
-});
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
+app.use("/api/jobs", jobRoute);
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });

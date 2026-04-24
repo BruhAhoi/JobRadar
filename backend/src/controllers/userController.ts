@@ -105,31 +105,56 @@ export const forgotPassword = async (req: AuthRequest, res: Response) => {
   try {
     const parsed = forgotPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ success: false, error: { code: "VALIDATION_ERROR", message: parsed.error.issues[0].message } });
+      res.status(400).json({
+        success: false,
+        error: { code: "VALIDATION_ERROR", message: parsed.error.issues[0].message },
+      });
       return;
     }
+
     const { email } = parsed.data;
-    // Luôn trả 200 để tránh user enumeration attack
     const user = await prisma.user.findUnique({ where: { email } });
-    const GENERIC_MSG = "If an account with that email exists, a reset link has been sent.";
+
     if (!user || user.deletedAt) {
-      res.status(200).json({ success: true, data: { message: GENERIC_MSG } });
+      res.status(401).json({
+        success: false,
+        error: { code: "USER_NOT_FOUND", message: "Email does not exist." },
+      });
       return;
     }
+
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 giờ
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
     await prisma.$transaction([
       prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
       prisma.passwordResetToken.create({ data: { userId: user.id, tokenHash, expiresAt } }),
     ]);
-    // TODO: Tích hợp Nodemailer để gửi email thực
+
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${rawToken}`;
-    await sendResetPasswordEmail(email, resetUrl);
-    res.status(200).json({ success: true, data: { message: GENERIC_MSG } });
+    const isSent = await sendResetPasswordEmail(email, resetUrl);
+
+    if (!isSent) {
+      await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }).catch(() => {});
+
+      res.status(500).json({
+        success: false,
+        error: { code: "EMAIL_ERROR", message: "Failed to send reset email. Please try again." },
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { message: "Reset link has been sent to your email." },
+    });
   } catch (err) {
     console.error("[forgotPassword]", err);
-    res.status(500).json({ success: false, error: { code: "INTERNAL_ERROR", message: "Internal server error" } });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Internal server error" },
+    });
   }
 };
 
