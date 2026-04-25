@@ -21,10 +21,10 @@ const router = Router();
  *             properties:
  *               email:
  *                 type: string
- *                 example: test@gmail.com
+ *                 example: taducthangcoi123@gmail.com
  *               password:
  *                 type: string
- *                 example: Test@123
+ *                 example: 123456
  *               name:
  *                 type: string
  *                 example: Nguyen Van A
@@ -52,10 +52,10 @@ router.post("/register", register);
  *             properties:
  *               email:
  *                 type: string
- *                 example: test@gmail.com
+ *                 example: taducthangcoi123@gmail.com
  *               password:
  *                 type: string
- *                 example: Test@123
+ *                 example: 123456
  *     responses:
  *       200:
  *         description: Đăng nhập thành công, trả về accessToken
