@@ -14,6 +14,7 @@ import helmet from "helmet";
 import authRoute from "./routes/authRoute";
 import userRoute from "./routes/userRoute";
 import jobRoute from "./routes/jobRoute";
+import { dashboardRouter, exportRouter } from "./routes/dashboardRoute";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -81,6 +82,8 @@ app.use("/api/auth/forgot-password", forgotLimiter);
 
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
+app.use("/api/dashboard", dashboardRouter);
+app.use("/api/export", exportRouter)
 app.use("/api/jobs", jobRoute);
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
