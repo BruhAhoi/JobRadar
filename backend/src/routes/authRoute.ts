@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { register, login, refresh, logout } from "../controllers/authController";
+import { register, login, refresh, logout, resendVerification, verifyEmail } from "../controllers/authController";
 import { forgotPassword, resetPassword } from "../controllers/userController";
 import { protectedRoute } from "../middlewares/authMiddleware";
 
@@ -35,6 +35,43 @@ const router = Router();
  *         description: Email đã tồn tại
  */
 router.post("/register", register);
+
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   get:
+ *     summary: Xác thực email qua token nhận từ mail
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Xác thực thành công }
+ *       400: { description: Token không hợp lệ hoặc hết hạn }
+ */
+router.get("/verify-email", verifyEmail);
+ 
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Gửi lại email xác thực
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string }
+ *     responses:
+ *       200: { description: Luôn trả 200 để tránh user enumeration }
+ */
+router.post("/resend-verification", resendVerification);
 
 /**
  * @swagger

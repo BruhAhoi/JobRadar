@@ -8,18 +8,20 @@ datasource db {
 }
 
 model User {
-  id                 String               @id @default(uuid())
-  email              String               @unique
-  passwordHash       String
-  name               String
-  isVerified         Boolean              @default(false)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  deletedAt          DateTime?
-  timezone           String               @default("Asia/Ho_Chi_Minh")
-  jobs               JobApplication[]
-  PasswordResetToken PasswordResetToken[]
-  refreshTokens      RefreshToken[]
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String
+  name                 String
+  isVerified           Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  deletedAt            DateTime?
+  timezone             String               @default("Asia/Ho_Chi_Minh")
+  emailVerifyTokenHash String?
+  emailVerifyExpiresAt DateTime?
+  jobs                 JobApplication[]
+  PasswordResetToken   PasswordResetToken[]
+  refreshTokens        RefreshToken[]
 }
 
 model JobApplication {
@@ -41,6 +43,7 @@ model JobApplication {
 
   @@index([userId, appliedAt(sort: Desc)])
   @@index([userId, status])
+  @@index([deadlineAt])
 }
 
 model InterviewNote {

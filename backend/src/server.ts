@@ -15,6 +15,8 @@ import authRoute from "./routes/authRoute";
 import userRoute from "./routes/userRoute";
 import jobRoute from "./routes/jobRoute";
 import { dashboardRouter, exportRouter } from "./routes/dashboardRoute";
+import { errorHandler, notFoundHandler } from "./middlewares/errorMiddleware";
+import { startReminderCron } from "./libs/reminderJob";
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -89,6 +91,12 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use(notFoundHandler);
+
+app.use(errorHandler);
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+
+  startReminderCron();
 });

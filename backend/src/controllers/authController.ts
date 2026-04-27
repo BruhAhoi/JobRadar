@@ -3,6 +3,8 @@ import bycrypt from "bcrypt";
 import prisma from "../libs/db";
 import { generateAccessToken, generateSecureToken, verifySecureToken, getRefreshTokenExpiry, refreshTokenMaxAge } from "../utils/token";
 import { AuthRequest } from "../middlewares/authMiddleware";
+import { sendVerificationEmail } from "../libs/mailer";
+import crypto from "crypto";
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
@@ -38,6 +40,109 @@ export const register = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token } = req.query as { token: string };
+ 
+    if (!token) {
+      res.status(400).json({
+        success: false,
+        error: { code: "VALIDATION_ERROR", message: "Token is required" },
+      });
+      return;
+    }
+ 
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+ 
+    const user = await prisma.user.findFirst({
+      where: { emailVerifyTokenHash: tokenHash },
+    });
+ 
+    if (!user) {
+      res.status(400).json({
+        success: false,
+        error: { code: "INVALID_TOKEN", message: "Token không hợp lệ hoặc đã được dùng" },
+      });
+      return;
+    }
+ 
+    if (user.emailVerifyExpiresAt && user.emailVerifyExpiresAt < new Date()) {
+      res.status(400).json({
+        success: false,
+        error: { code: "TOKEN_EXPIRED", message: "Token đã hết hạn. Vui lòng đăng ký lại." },
+      });
+      return;
+    }
+ 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        emailVerifyTokenHash: null,
+        emailVerifyExpiresAt: null,
+      },
+    });
+ 
+    res.status(200).json({
+      success: true,
+      data: { message: "Xác thực email thành công! Bạn có thể đăng nhập." },
+    });
+  } catch (err) {
+    console.error("[verifyEmail]", err);
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Internal server error" },
+    });
+  }
+};
+
+export const resendVerification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({
+        success: false,
+        error: { code: "VALIDATION_ERROR", message: "Email is required" },
+      });
+      return;
+    }
+ 
+    const user = await prisma.user.findUnique({ where: { email } });
+ 
+    // Luôn trả 200 để tránh user enumeration
+    if (!user || user.deletedAt || user.isVerified) {
+      res.status(200).json({
+        success: true,
+        data: { message: "Nếu email tồn tại và chưa xác thực, bạn sẽ nhận được email mới." },
+      });
+      return;
+    }
+ 
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+ 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerifyTokenHash: tokenHash, emailVerifyExpiresAt: expiresAt },
+    });
+ 
+    const verifyUrl = `${process.env.CLIENT_URL}/verify-email?token=${rawToken}`;
+    sendVerificationEmail(email, verifyUrl).catch(console.error);
+ 
+    res.status(200).json({
+      success: true,
+      data: { message: "Nếu email tồn tại và chưa xác thực, bạn sẽ nhận được email mới." },
+    });
+  } catch (err) {
+    console.error("[resendVerification]", err);
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Internal server error" },
+    });
+  }
+};
 
 export const login = async (req: Request, res: Response) => {
     try {
