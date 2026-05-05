@@ -3,6 +3,7 @@ import bycrypt from "bcrypt";
 import prisma from "../libs/db";
 import { generateAccessToken, generateSecureToken, verifySecureToken, getRefreshTokenExpiry, refreshTokenMaxAge } from "../utils/token";
 import { AuthRequest } from "../middlewares/authMiddleware";
+import { logServerError } from "../middlewares/errorMiddleware";
 import { sendVerificationEmail } from "../libs/mailer";
 import crypto from "crypto";
 
@@ -188,7 +189,7 @@ export const login = async (req: Request, res: Response) => {
             },
         });
     } catch (error) {
-        console.error("[login]", error);
+        logServerError("login", error, req);
         res.status(500).json({ message: "Lỗi hệ thống" });
     }
 }

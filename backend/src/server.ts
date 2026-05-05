@@ -15,7 +15,7 @@ import authRoute from "./routes/authRoute";
 import userRoute from "./routes/userRoute";
 import jobRoute from "./routes/jobRoute";
 import { dashboardRouter, exportRouter } from "./routes/dashboardRoute";
-import { errorHandler, notFoundHandler } from "./middlewares/errorMiddleware";
+import { errorHandler, notFoundHandler, requestLogger } from "./middlewares/errorMiddleware";
 import { startReminderCron } from "./libs/reminderJob";
 
 const app = express();
@@ -43,6 +43,7 @@ app.use(
 
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
+app.use(requestLogger);
 
 const globalLimiter = rateLimit({
   windowMs: 60_000,

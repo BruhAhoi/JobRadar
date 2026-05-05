@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY prisma.config.ts ./
 COPY prisma ./prisma/
 
 RUN npm ci
@@ -26,6 +27,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 COPY package*.json ./
+COPY prisma.config.ts ./
 COPY prisma ./prisma/
 
 RUN npm ci --omit=dev

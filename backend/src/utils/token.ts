@@ -3,7 +3,13 @@ import crypto from "crypto";
 import bcrypt from "bcrypt";
 
 export const generateAccessToken = (userId: string) => {
-    return jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET as string, { expiresIn: "15m" });
+    const secret = process.env.ACCESS_TOKEN_SECRET;
+
+    if (!secret) {
+        throw new Error("ACCESS_TOKEN_SECRET is missing");
+    }
+
+    return jwt.sign({ userId }, secret, { expiresIn: "15m" });
 }
 
 export const generateSecureToken = async () => {

@@ -11,6 +11,41 @@ export class AppError extends Error {
   }
 }
 
+export const logServerError = (
+  context: string,
+  err: unknown,
+  req?: Request
+): void => {
+  const error = err instanceof Error ? err : new Error(String(err));
+
+  console.error(`[${context}]`, {
+    method: req?.method,
+    url: req?.originalUrl,
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    prismaCode: (err as any)?.code,
+    prismaMeta: (err as any)?.meta,
+  });
+};
+
+export const requestLogger = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const startedAt = Date.now();
+
+  res.on("finish", () => {
+    const durationMs = Date.now() - startedAt;
+    const log = res.statusCode >= 500 ? console.error : console.log;
+
+    log(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms`);
+  });
+
+  next();
+};
+
 // Central error handler — never leaks stack trace in production
 export const errorHandler = (
   err: Error,
@@ -46,12 +81,7 @@ export const errorHandler = (
   }
 
   // Unknown errors — log internally, never expose detail to client
-  console.error("[Unhandled Error]", {
-    name: err.name,
-    message: err.message,
-    // Stack only in dev
-    ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
-  });
+  logServerError("Unhandled Error", err, req);
 
   res.status(500).json({
     success: false,
