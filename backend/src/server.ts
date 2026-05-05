@@ -71,6 +71,9 @@ const forgotLimiter = rateLimit({
   message: { success: false, error: { code: "RATE_LIMITED", message: "Too many password reset requests." } },
 });
 
+app.get("/api/docs.json", (req, res) => {
+  res.json(swaggerSpec);
+});
 app.use(
   "/api/docs",
   helmet({ contentSecurityPolicy: false }),
