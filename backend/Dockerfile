@@ -1,14 +1,41 @@
-#chọn môi trường
-FROM node:20-alpine
-#tạo thư mục làm việc trong container
+FROM node:20-alpine AS builder
+
 WORKDIR /app
-#copy file quản lý thư viện vào trước để tận dụng cache của docker
+
 COPY package*.json ./
-#cài đặt thư viện
-RUN npm install --production
-#copy toàn bộ mã nguồn vào container
-COPY . .
-#expose cổng mà ứng dụng sẽ chạy
-EXPOSE 3000
-#chạy ứng dụng
-CMD ["npx", "ts-node", "src/server.ts"]
+COPY tsconfig.json ./
+COPY prisma ./prisma/
+
+RUN npm ci
+
+# Generate Prisma client
+RUN npx prisma generate
+
+COPY src ./src
+
+# Build TypeScript
+RUN npm run build
+
+# Copy generated prisma vào dist để dùng trong runner
+RUN cp -r src/generated dist/generated
+
+# ---
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY prisma ./prisma/
+
+RUN npm ci --omit=dev
+
+# Generate Prisma client trong runner
+RUN npx prisma generate
+
+# Copy compiled JS từ builder
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 5001
+
+CMD ["node", "dist/server.js"]
