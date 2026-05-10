@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Info, Eye, EyeOff } from "lucide-react";
+import { useAuthStore } from "../stores/useAuthStore";
+import { useNavigate } from 'react-router'
 
 // Định nghĩa Schema xác thực bằng Zod
 const registerSchema = z
@@ -25,10 +27,11 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const { signUp } = useAuthStore();
+  const navigate = useNavigate();
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Sử dụng react-hook-form thuần túy giống như file signup-form.tsx bạn cung cấp
   const {
     register,
     handleSubmit,
@@ -40,6 +43,10 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     console.log("Dữ liệu đăng ký:", data);
     // Thực hiện gọi API đăng ký tại đây
+    const { email, password, displayName} = data;
+
+    await signUp(email, password, displayName);
+    navigate("/login");
   };
 
   return (

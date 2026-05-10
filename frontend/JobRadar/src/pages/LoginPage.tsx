@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,22 +10,47 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { LogIn } from "lucide-react";
+import { z } from "zod";
+import { useAuthStore } from "../stores/useAuthStore";
+import { useNavigate } from "react-router";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
-export default function LoginPage() {
+const signInSchema = z.object({
+  email: z.email("Vui lòng nhập địa chỉ email hợp lệ"),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+})
+
+type SignInFormValues = z.infer<typeof signInSchema>
+
+export default function LoginPage({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  const { signIn } = useAuthStore();
+  const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema)
+  })
   const [showPassword, setShowPassword] = useState(false);
 
+  const onSubmit = async (data: SignInFormValues) => {
+    const { email, password } = data
+    await signIn(email, password)
+    navigate("/")
+  }
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden font-sans text-slate-200">
-      
+
       {/* ── LỚP NỀN CỐ ĐỊNH (FIXED BACKGROUND) ── */}
       {/* Đây là phần quan trọng nhất để không bao giờ có khoảng trắng khi zoom */}
-      <div 
+      <div
         className="fixed inset-0 z-0"
         style={{
           background: "radial-gradient(ellipse 80% 60% at 10% 10%, #0f2340 0%, #060e1a 55%, #07111f 100%)",
         }}
       />
-      
+
       {/* Hiệu ứng Vignette phía dưới */}
       <div
         className="fixed inset-0 z-0 pointer-events-none"
@@ -36,7 +61,7 @@ export default function LoginPage() {
 
       {/* ── NỘI DUNG CHÍNH (CONTENT LAYER) ── */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        
+
         {/* NAVBAR */}
         <header className="flex items-center justify-center h-14 shrink-0 border-b border-white/5">
           <div className="flex items-center gap-2.5">
@@ -67,58 +92,62 @@ export default function LoginPage() {
             </CardHeader>
 
             <CardContent className="px-8 pb-9 grid gap-5">
-              {/* Email */}
-              <div className="grid gap-2">
-                <Label htmlFor="email" className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@company.com"
-                  className="h-11 bg-white/5 border-white/10 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-500/60"
-                />
-              </div>
-
-              {/* Password */}
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Password</Label>
-                  <a href="#" className="text-[13px] text-slate-400 hover:text-slate-200 transition-colors">Forgot password?</a>
-                </div>
-                <div className="relative">
+              <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
+                {/* Email */}
+                <div className="grid gap-2">
+                  <Label htmlFor="email" className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Email Address</Label>
                   <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    defaultValue="password123"
-                    className="h-11 bg-white/5 border-white/10 text-sm text-slate-200 pr-10 focus-visible:ring-1 focus-visible:ring-blue-500/60"
+                    {...register("email")}
+                    id="email"
+                    type="email"
+                    placeholder="name@company.com"
+                    className="h-11 bg-white/5 border-white/10 text-sm text-slate-200 placeholder:text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-500/60"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                  >
-                    {showPassword ? "🙈" : "👁️"} {/* Thay bằng Lucide Eye nếu thích */}
-                  </button>
                 </div>
-              </div>
 
-              <Button className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-semibold gap-2 mt-1 transition-all active:scale-[0.98]">
-                Sign In <LogIn className="h-4 w-4" />
-              </Button>
-
-              <div className="relative my-2">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
-                <div className="relative flex justify-center">
-                  <span className="bg-[#0b1424] px-4 text-[11px] font-medium uppercase tracking-widest text-slate-500">Or continue with</span>
+                {/* Password */}
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Password</Label>
+                    <a href="#" className="text-[13px] text-slate-400 hover:text-slate-200 transition-colors">Forgot password?</a>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      {...register("password")}
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      defaultValue="password123"
+                      className="h-11 bg-white/5 border-white/10 text-sm text-slate-200 pr-10 focus-visible:ring-1 focus-visible:ring-blue-500/60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    >
+                      {showPassword ? "🙈" : "👁️"} {/* Thay bằng Lucide Eye nếu thích */}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <Button variant="outline" className="h-11 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
-                Google
-              </Button>
-              
-              <p className="text-center text-[13px] text-slate-400 mt-2">
-                Don't have an account? <a href="#" className="font-semibold text-white hover:text-blue-400 transition-colors">Request Access</a>
-              </p>
+                <Button className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-semibold gap-2 mt-1 transition-all active:scale-[0.98]">
+                  Sign In <LogIn className="h-4 w-4" />
+                </Button>
+
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5" /></div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-[#0b1424] px-4 text-[11px] font-medium uppercase tracking-widest text-slate-500">Or continue with</span>
+                  </div>
+                </div>
+
+                <Button variant="outline" className="h-11 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
+                  Google
+                </Button>
+
+                <p className="text-center text-[13px] text-slate-400 mt-2">
+                  Don't have an account? <a href="#" className="font-semibold text-white hover:text-blue-400 transition-colors">Request Access</a>
+                </p>
+              </form>
             </CardContent>
           </Card>
         </main>
@@ -130,15 +159,6 @@ export default function LoginPage() {
           <span>© 2024 JobRadar. All rights reserved.</span>
         </footer>
       </div>
-
-      {/* Decorative Card - Giữ ở Absolute để không ảnh hưởng layout chính */}
-      <div
-        className="hidden md:block pointer-events-none absolute bottom-8 right-8 w-64 h-32 rounded-xl z-0"
-        style={{
-          border: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(255,255,255,0.015)",
-        }}
-      />
     </div>
   );
 }
