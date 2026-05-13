@@ -1,23 +1,16 @@
-import React from "react";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CIRCULAR PROGRESS
-// ─────────────────────────────────────────────────────────────────────────────
-interface CircularProgressProps {
-  percentage: number; // 0–100
-  size?: number;      // px
-  strokeWidth?: number;
-  trackColor?: string;
-  progressColor?: string;
-}
-
 function CircularProgress({
   percentage,
   size = 72,
   strokeWidth = 6,
   trackColor = "rgba(255,255,255,0.06)",
   progressColor = "#4f7ef8",
-}: CircularProgressProps) {
+}: {
+  percentage: number;
+  size?: number;
+  strokeWidth?: number;
+  trackColor?: string;
+  progressColor?: string;
+}) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
@@ -26,7 +19,6 @@ function CircularProgress({
   return (
     <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        {/* Track */}
         <circle
           cx={center}
           cy={center}
@@ -35,7 +27,6 @@ function CircularProgress({
           stroke={trackColor}
           strokeWidth={strokeWidth}
         />
-        {/* Progress */}
         <circle
           cx={center}
           cy={center}
@@ -49,32 +40,26 @@ function CircularProgress({
           style={{ transition: "stroke-dashoffset 0.6s ease" }}
         />
       </svg>
-
-      {/* Center text */}
-      <span
-        className="absolute text-[13px] font-bold text-white"
-        style={{ lineHeight: 1 }}
-      >
+      <span className="absolute text-[13px] font-bold text-white" style={{ lineHeight: 1 }}>
         {percentage}%
       </span>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// RESPONSE RATE CARD
-// ─────────────────────────────────────────────────────────────────────────────
 interface ResponseRateProps {
   percentage?: number;
-  label?: string;
-  description?: string;
 }
 
-export default function ResponseRate({
-  percentage = 65,
-  label = "Above average",
-  description = "Top 5% of candidates in your niche.",
-}: ResponseRateProps) {
+export default function ResponseRate({ percentage }: ResponseRateProps) {
+  const pct = percentage ?? 0;
+  const label = pct >= 50 ? "Above average" : pct >= 20 ? "Average" : "Needs improvement";
+  const description = pct >= 50
+    ? "Strong response rate — keep it up!"
+    : pct >= 20
+    ? "Room for improvement in applications."
+    : "Try optimizing your resume and cover letter.";
+
   return (
     <div
       className="rounded-xl px-5 py-5"
@@ -83,17 +68,12 @@ export default function ResponseRate({
         border: "1px solid rgba(255,255,255,0.07)",
       }}
     >
-      {/* Section label */}
       <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-4">
-        Response Rate
+        CV Pass Rate
       </p>
 
-      {/* Content row */}
       <div className="flex items-center gap-4">
-        {/* Circular chart */}
-        <CircularProgress percentage={percentage} />
-
-        {/* Text info */}
+        <CircularProgress percentage={pct} />
         <div className="min-w-0">
           <p className="text-[14px] font-semibold text-white leading-tight">
             {label}

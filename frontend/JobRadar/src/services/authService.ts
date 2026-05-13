@@ -1,4 +1,22 @@
 import api from "../lib/axios";
+import type { User } from "../types/user";
+
+type ApiResponse<T> = {
+    success?: boolean;
+    data?: T;
+};
+
+const unwrapData = <T>(responseData: T | ApiResponse<T>): T => {
+    if (
+        responseData &&
+        typeof responseData === "object" &&
+        "data" in responseData
+    ) {
+        return (responseData as ApiResponse<T>).data as T;
+    }
+
+    return responseData as T;
+};
 
 export const authService = {
     signUp: async (email: string, password: string, name: string) => {
@@ -11,7 +29,7 @@ export const authService = {
     },
     fetchMe: async () => {
         const response = await api.get("/users/me", { withCredentials: true });
-        return response.data;
+        return unwrapData<User>(response.data);
     },
     signOut: async () => {
         return api.post("/auth/logout", {}, { withCredentials: true }); 

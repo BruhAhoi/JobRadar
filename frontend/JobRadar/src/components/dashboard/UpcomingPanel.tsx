@@ -1,106 +1,63 @@
-import React from "react";
+import type { UpcomingDeadline } from "../../services/dashboardService";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-interface UpcomingItem {
-  id: string;
-  company: string;
-  role: string;
-  date: string; // e.g. "OCT 14"
-  time: string; // e.g. "10:00 AM"
-  timeHighlight?: boolean; // true = xanh, false = mờ
+function formatDeadline(dateStr: string): { date: string; time: string; urgent: boolean } {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = d.getTime() - now.getTime();
+  const hoursLeft = diff / 3600000;
+
+  const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+  const time = hoursLeft < 24
+    ? `${Math.round(hoursLeft)}h left`
+    : `${Math.round(hoursLeft / 24)}d left`;
+
+  return { date, time, urgent: hoursLeft < 24 };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MOCK DATA
-// ─────────────────────────────────────────────────────────────────────────────
-const MOCK_UPCOMING: UpcomingItem[] = [
-  {
-    id: "1",
-    company: "Airbnb",
-    role: "System Design Round",
-    date: "OCT 14",
-    time: "10:00 AM",
-    timeHighlight: true,
-  },
-  {
-    id: "2",
-    company: "Anthropic",
-    role: "Technical Screen",
-    date: "OCT 15",
-    time: "02:30 PM",
-    timeHighlight: false,
-  },
-  {
-    id: "3",
-    company: "PostHog",
-    role: "Culture Fit",
-    date: "OCT 17",
-    time: "11:00 AM",
-    timeHighlight: false,
-  },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// UPCOMING ITEM ROW
-// ─────────────────────────────────────────────────────────────────────────────
-function UpcomingRow({ item }: { item: UpcomingItem }) {
+function UpcomingRow({ item }: { item: UpcomingDeadline }) {
+  const { date, time, urgent } = formatDeadline(item.deadlineAt);
   return (
     <div
       className="flex items-center justify-between py-3.5 gap-4"
       style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
     >
-      {/* Left: accent bar + company info */}
       <div className="flex items-start gap-3 min-w-0">
-        {/* Vertical accent bar */}
         <div
           className="w-[3px] rounded-full mt-0.5 shrink-0"
           style={{
             height: "36px",
-            background: item.timeHighlight
-              ? "#4f7ef8"
-              : "rgba(255,255,255,0.12)",
+            background: urgent ? "#ef4444" : "#4f7ef8",
           }}
         />
         <div className="min-w-0">
           <p className="text-[13.5px] font-semibold text-white leading-tight truncate">
-            {item.company}
+            {item.companyName}
           </p>
           <p className="text-[12px] text-slate-500 mt-0.5 truncate">
-            {item.role}
+            {item.position}
           </p>
         </div>
       </div>
-
-      {/* Right: date + time */}
       <div className="text-right shrink-0">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-          {item.date}
+          {date}
         </p>
         <p
           className="text-[12px] font-medium mt-0.5"
-          style={{
-            color: item.timeHighlight ? "#60a5fa" : "#64748b",
-          }}
+          style={{ color: urgent ? "#ef4444" : "#60a5fa" }}
         >
-          {item.time}
+          {time}
         </p>
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UPCOMING PANEL
-// ─────────────────────────────────────────────────────────────────────────────
 interface UpcomingPanelProps {
-  items?: UpcomingItem[];
+  deadlines?: UpcomingDeadline[];
 }
 
-export default function UpcomingPanel({
-  items = MOCK_UPCOMING,
-}: UpcomingPanelProps) {
+export default function UpcomingPanel({ deadlines = [] }: UpcomingPanelProps) {
   return (
     <div
       className="rounded-xl overflow-hidden"
@@ -109,31 +66,29 @@ export default function UpcomingPanel({
         border: "1px solid rgba(255,255,255,0.07)",
       }}
     >
-      {/* Header */}
       <div
         className="px-5 py-4"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
       >
-        <h2 className="text-[14px] font-semibold text-white">Upcoming</h2>
+        <h2 className="text-[14px] font-semibold text-white">Upcoming Deadlines</h2>
       </div>
 
-      {/* Rows */}
       <div className="px-5">
-        {items.map((item, index) => (
-          <div
-            key={item.id}
-            style={
-              index === items.length - 1
-                ? { borderBottom: "none" }
-                : undefined
-            }
-          >
-            <UpcomingRow item={item} />
+        {deadlines.length === 0 ? (
+          <div className="py-6 text-center text-[13px] text-slate-500">
+            No upcoming deadlines
           </div>
-        ))}
+        ) : (
+          deadlines.map((item, index) => (
+            <div
+              key={item.id}
+              style={index === deadlines.length - 1 ? { borderBottom: "none" } : undefined}
+            >
+              <UpcomingRow item={item} />
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
 }
-
-export type { UpcomingItem };

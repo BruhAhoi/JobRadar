@@ -1,9 +1,6 @@
 import React, { useState } from "react";
 import { Bell, Search } from "lucide-react";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TOPBAR
-// ─────────────────────────────────────────────────────────────────────────────
 interface TopbarProps {
   userName?: string;
   avatarUrl?: string;
@@ -17,7 +14,7 @@ export default function Topbar({
 }: TopbarProps) {
   const [searchFocused, setSearchFocused] = useState(false);
 
-  // Lấy chữ cái đầu để làm avatar fallback
+  // Lấy 2 chữ cái đầu từ tên để làm avatar fallback
   const initials = userName
     .split(" ")
     .map((w) => w[0])
@@ -27,11 +24,7 @@ export default function Topbar({
 
   return (
     <header
-      className="fixed top-0 left-[248px] right-0 h-14 z-20 flex items-center px-5 gap-4"
-      style={{
-        background: "#0d1117",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-      }}
+      className="w-full h-14 flex items-center px-5 gap-4"
     >
       {/* ── SEARCH BAR ── */}
       <div
@@ -46,11 +39,7 @@ export default function Topbar({
             : "none",
         }}
       >
-        <Search
-          size={14}
-          strokeWidth={2}
-          className="text-slate-500 shrink-0"
-        />
+        <Search size={14} strokeWidth={2} className="text-slate-500 shrink-0" />
         <input
           type="text"
           placeholder="Quick search..."
@@ -58,7 +47,6 @@ export default function Topbar({
           onBlur={() => setSearchFocused(false)}
           className="flex-1 bg-transparent text-[13px] text-slate-300 placeholder:text-slate-600 outline-none"
         />
-        {/* ⌘K shortcut badge */}
         <div
           className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-mono shrink-0"
           style={{
@@ -79,7 +67,6 @@ export default function Topbar({
         {/* Notification bell */}
         <button className="relative w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-all">
           <Bell size={17} strokeWidth={1.8} />
-          {/* Badge */}
           {notificationCount > 0 && (
             <span
               className="absolute top-1 right-1 w-[7px] h-[7px] rounded-full"
@@ -88,26 +75,35 @@ export default function Topbar({
           )}
         </button>
 
-        {/* Avatar */}
-        <button className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-transparent hover:ring-blue-500/40 transition-all">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={userName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            /* Fallback gradient avatar */
-            <div
-              className="w-full h-full flex items-center justify-center text-[11px] font-bold text-white"
-              style={{
-                background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
-              }}
-            >
-              {initials}
-            </div>
-          )}
-        </button>
+        {/* User info + Avatar */}
+        <div className="flex items-center gap-2.5">
+          {/* Tên user — ẩn trên màn hình nhỏ */}
+          <div className="hidden sm:flex flex-col items-end">
+            <span className="text-[13px] font-medium text-slate-200 leading-tight">
+              {userName}
+            </span>
+          </div>
+
+          {/* Avatar button */}
+          <button className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-transparent hover:ring-blue-500/40 transition-all">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={userName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-[11px] font-bold text-white"
+                style={{
+                  background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
+                }}
+              >
+                {initials}
+              </div>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   );

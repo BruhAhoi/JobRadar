@@ -3,6 +3,22 @@ import { toast } from 'sonner'
 import { persist } from 'zustand/middleware'
 import type { AuthState } from '../types/store'
 import { authService } from '../services/authService';
+import type { User } from '../types/user';
+
+type UserResponse = {
+    success?: boolean;
+    data?: User;
+};
+
+const normalizeUser = (user: User | UserResponse | null | undefined): User | null => {
+    if (!user) return null;
+
+    if ("data" in user && user.data) {
+        return user.data;
+    }
+
+    return user as User;
+};
 
 export const useAuthStore = create<AuthState>()(
     persist((set, get) => ({
@@ -14,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
             set({ accessToken: token })
         },
         setUser: (user) => {
-            set({ user })
+            set({ user: normalizeUser(user) })
         },
         cleanState: () => {
             set({ accessToken: null, user: null, loading: false });
@@ -68,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
         fetchMe: async () => {
             try {
                 const user = await authService.fetchMe();
-                set({ user });
+                set({ user: normalizeUser(user) });
             } catch (error) {
                 console.error("Fetch me error:", error);
                 set({ user: null, accessToken: null });
@@ -96,5 +112,14 @@ export const useAuthStore = create<AuthState>()(
     }), {
         name: 'auth-storage',
         partialize: (state) => ({ user: state.user }),
+        merge: (persistedState, currentState) => {
+            const persistedAuthState = persistedState as Partial<AuthState>;
+
+            return {
+                ...currentState,
+                ...persistedAuthState,
+                user: normalizeUser(persistedAuthState.user),
+            };
+        },
     })
 );

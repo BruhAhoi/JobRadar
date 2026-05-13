@@ -1,20 +1,15 @@
 import React from "react";
+import type { DashboardSummary } from "../../services/dashboardService";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
 interface StatCardProps {
   label: string;
   value: string;
   sub: string;
-  subHighlight?: string; // phần text highlight màu xanh/xanh lá
-  subPosition?: "after" | "before"; // highlight trước hay sau sub text
+  subHighlight?: string;
+  subPosition?: "after" | "before";
   icon: React.ReactNode;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STAT CARD
-// ─────────────────────────────────────────────────────────────────────────────
 export default function StatCard({
   label,
   value,
@@ -31,12 +26,10 @@ export default function StatCard({
         border: "1px solid rgba(255,255,255,0.07)",
       }}
     >
-      {/* ── LABEL + ICON row ── */}
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
           {label}
         </span>
-        {/* Icon box */}
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center text-blue-400"
           style={{ background: "rgba(79,126,248,0.12)" }}
@@ -45,14 +38,12 @@ export default function StatCard({
         </div>
       </div>
 
-      {/* ── VALUE ── */}
       <div className="flex items-end gap-2">
         <span className="text-[28px] font-bold text-white leading-none tracking-tight">
           {value}
         </span>
       </div>
 
-      {/* ── SUB TEXT ── */}
       <p className="text-[12px] text-slate-500 leading-none">
         {subPosition === "before" && subHighlight && (
           <span className="text-emerald-400 font-medium mr-1">{subHighlight}</span>
@@ -66,11 +57,6 @@ export default function StatCard({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STAT CARDS GRID — convenience wrapper dùng trực tiếp trong DashboardPage
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Icons inline (tránh import thêm nếu không dùng lucide)
 function IconSend() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -109,34 +95,30 @@ function IconTarget() {
   );
 }
 
-export function StatCardsGrid() {
+export function StatCardsGrid({ summary }: { summary?: DashboardSummary }) {
   const stats = [
     {
       label: "Total Applications",
-      value: "124",
-      sub: "this month",
-      subHighlight: "+12%",
-      subPosition: "before" as const,
+      value: summary?.total?.toLocaleString() ?? "—",
+      sub: "all time",
       icon: <IconSend />,
     },
     {
       label: "Active Applications",
-      value: "42",
+      value: summary?.active?.toLocaleString() ?? "—",
       sub: "in-progress",
       icon: <IconBriefcase />,
     },
     {
       label: "CV Pass Rate",
-      value: "68%",
-      sub: "above average",
-      subHighlight: "↑",
-      subPosition: "before" as const,
+      value: summary != null ? `${summary.cvPassRate}%` : "—",
+      sub: "of applications",
       icon: <IconFileCheck />,
     },
     {
       label: "Offer Rate",
-      value: "12%",
-      sub: "target: 15%",
+      value: summary != null ? `${summary.offerRate}%` : "—",
+      sub: summary != null ? `accept: ${summary.acceptRate}%` : "—",
       icon: <IconTarget />,
     },
   ];
